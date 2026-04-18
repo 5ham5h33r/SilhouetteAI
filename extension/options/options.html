@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>SilhouetteAI &mdash; Settings</title>
+  <link rel="stylesheet" href="options.css">
+</head>
+<body>
+<div class="shell">
+  <header>
+    <span class="logo" aria-hidden="true"></span>
+    <h1>SilhouetteAI</h1>
+    <span class="version">v0.1.0</span>
+  </header>
+
+  <section id="welcome-section" class="welcome hidden">
+    <h2>Welcome to SilhouetteAI</h2>
+    <p>SilhouetteAI detects personal information in your AI chat prompts and redacts it before submission. All detection runs locally &mdash; nothing is sent anywhere.</p>
+    <p>By default, the extension is active on ChatGPT. Try it: type a prompt that contains an email or phone number, then press Enter.</p>
+    <button id="dismiss-welcome" class="primary">Got it</button>
+  </section>
+
+  <section>
+    <h2>General</h2>
+    <div class="field">
+      <label class="field-label">Protection enabled</label>
+      <label class="switch"><input type="checkbox" id="enabled"><span class="slider"></span></label>
+    </div>
+    <div class="field">
+      <label class="field-label" for="mode">Mode</label>
+      <select id="mode">
+        <option value="interactive">Interactive &mdash; review each prompt</option>
+        <option value="auto">Auto &mdash; redact silently</option>
+        <option value="warn">Warn only &mdash; send as-is</option>
+      </select>
+    </div>
+    <div class="field">
+      <label class="field-label" for="defaultAction">Default redaction</label>
+      <select id="defaultAction">
+        <option value="mask">Mask (&#x2588;&#x2588;&#x2588;&#x2588;)</option>
+        <option value="tokenize">Tokenize ([PERSON_1])</option>
+        <option value="synthesize">Synthesize (fake data)</option>
+      </select>
+    </div>
+  </section>
+
+  <section>
+    <h2>Detection categories</h2>
+    <p class="desc">Uncheck to skip detecting a category entirely.</p>
+    <div class="cats" id="cats"></div>
+  </section>
+
+  <section>
+    <h2>Allowlist</h2>
+    <p class="desc">Strings listed here are never flagged (case-insensitive). One per line.</p>
+    <textarea id="allowlist" placeholder="acme.com&#10;my-safe-project-id"></textarea>
+  </section>
+
+  <section id="test-section">
+    <h2>Test detection</h2>
+    <p class="desc">Paste text below to see what SilhouetteAI would detect. Nothing is sent anywhere.</p>
+    <textarea id="test-input" placeholder="My email is jane.doe@example.com, my card is 4111 1111 1111 1111, and my phone is +1 (555) 123-4567."></textarea>
+    <div id="test-output" class="test-output"></div>
+  </section>
+
+  <section>
+    <h2>Activity log</h2>
+    <p class="desc">Local-only record of the last 100 redaction events. Never leaves your device.</p>
+    <div id="log" class="log"></div>
+    <button id="clear-log">Clear log</button>
+  </section>
+
+  <section>
+    <h2>Data</h2>
+    <p class="desc">Per-conversation token maps power reverse-mapping of responses. You can remove them anytime.</p>
+    <button id="clear-maps" class="danger">Clear all token maps</button>
+    <button id="clear-all" class="danger">Reset everything</button>
+  </section>
+
+  <footer class="page-footer">
+    SilhouetteAI &middot; All detection runs locally &middot; v0.1.0 Phase 1 MVP
+  </footer>
+</div>
+
+<!-- detection.js registers window.__SILH.detection, used by the test panel. -->
+<script src="../content/detection.js"></script>
+<script src="options.js"></script>
+</body>
+</html>

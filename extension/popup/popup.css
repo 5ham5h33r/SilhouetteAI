@@ -1,0 +1,72 @@
+:root { color-scheme: light dark; }
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  padding: 14px 16px;
+  width: 320px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-size: 13px;
+  color: #0f172a;
+  background: #ffffff;
+}
+body.is-disabled .row:not(.row-toggle) { opacity: 0.5; pointer-events: none; }
+
+header { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+header h1 { margin: 0; font-size: 15px; font-weight: 600; }
+.logo {
+  width: 12px; height: 12px; border-radius: 50%;
+  background: linear-gradient(135deg, #10b981, #059669);
+  box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.2);
+}
+
+.row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 0; border-top: 1px solid #e2e8f0;
+}
+.row:first-of-type { border-top: none; }
+.label { font-weight: 500; min-width: 100px; }
+.hint { font-size: 11px; color: #64748b; }
+
+select {
+  flex: 1;
+  padding: 6px 8px;
+  border-radius: 6px;
+  border: 1px solid #cbd5e1;
+  font-size: 12px;
+  background: #fff;
+  color: inherit;
+  font-family: inherit;
+}
+
+footer {
+  display: flex; gap: 8px; margin-top: 10px;
+  padding-top: 10px; border-top: 1px solid #e2e8f0;
+}
+footer button {
+  flex: 1; padding: 8px 10px;
+  border-radius: 6px;
+  border: 1px solid #cbd5e1;
+  background: #f8fafc;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 12px;
+}
+footer button:hover { background: #f1f5f9; }
+
+.switch { position: relative; display: inline-block; width: 36px; height: 20px; flex-shrink: 0; }
+.switch input { opacity: 0; width: 0; height: 0; }
+.slider { position: absolute; cursor: pointer; inset: 0; background: #cbd5e1; border-radius: 20px; transition: 0.2s; }
+.slider:before { content: ""; position: absolute; width: 14px; height: 14px; left: 3px; top: 3px; background: white; border-radius: 50%; transition: 0.2s; }
+.switch input:checked + .slider { background: #059669; }
+.switch input:checked + .slider:before { transform: translateX(16px); }
+
+@media (prefers-color-scheme: dark) {
+  body { background: #0f172a; color: #e2e8f0; }
+  .row { border-color: #1e293b; }
+  .hint { color: #94a3b8; }
+  select { background: #1e293b; color: #e2e8f0; border-color: #334155; }
+  footer { border-color: #1e293b; }
+  footer button { background: #1e293b; color: #e2e8f0; border-color: #334155; }
+  footer button:hover { background: #334155; }
+}

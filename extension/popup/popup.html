@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>SilhouetteAI</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <header>
+    <span class="logo" aria-hidden="true"></span>
+    <h1>SilhouetteAI</h1>
+  </header>
+
+  <div class="row row-toggle">
+    <label class="switch">
+      <input type="checkbox" id="toggle-enabled">
+      <span class="slider"></span>
+    </label>
+    <div>
+      <div class="label">Protection</div>
+      <div class="hint" id="status-hint">Active</div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="label">Mode</div>
+    <select id="mode-select">
+      <option value="interactive">Interactive</option>
+      <option value="auto">Auto-redact</option>
+      <option value="warn">Warn only</option>
+    </select>
+  </div>
+
+  <div class="row">
+    <div class="label">Default action</div>
+    <select id="action-select">
+      <option value="mask">Mask</option>
+      <option value="tokenize">Tokenize</option>
+      <option value="synthesize">Synthesize</option>
+    </select>
+  </div>
+
+  <footer>
+    <button id="options-btn">Settings</button>
+    <button id="test-btn">Test</button>
+  </footer>
+
+  <script src="popup.js"></script>
+</body>
+</html>

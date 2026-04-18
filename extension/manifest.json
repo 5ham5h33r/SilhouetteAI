@@ -1,0 +1,36 @@
+{
+  "manifest_version": 3,
+  "name": "SilhouetteAI",
+  "version": "0.1.0",
+  "description": "Detects and obscures personal information in AI chat prompts before they leave your browser.",
+  "permissions": ["storage"],
+  "host_permissions": [
+    "https://chatgpt.com/*",
+    "https://chat.openai.com/*"
+  ],
+  "action": {
+    "default_popup": "popup/popup.html",
+    "default_title": "SilhouetteAI"
+  },
+  "options_page": "options/options.html",
+  "background": {
+    "service_worker": "background/service-worker.js"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://chatgpt.com/*",
+        "https://chat.openai.com/*"
+      ],
+      "js": [
+        "content/detection.js",
+        "content/redaction.js",
+        "content/interstitial.js",
+        "content/adapter-chatgpt.js",
+        "content/content.js"
+      ],
+      "css": ["content/interstitial.css"],
+      "run_at": "document_idle"
+    }
+  ]
+}

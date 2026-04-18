@@ -1,0 +1,96 @@
+/* SilhouetteAI interstitial modal and toast. */
+.silh-root {
+  position: fixed; inset: 0; z-index: 2147483646;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  color: #0f172a;
+}
+.silh-backdrop {
+  position: absolute; inset: 0;
+  background: rgba(15, 23, 42, 0.55);
+  backdrop-filter: blur(2px);
+}
+.silh-modal {
+  position: relative;
+  max-width: 640px; width: calc(100% - 40px);
+  margin: 6vh auto 0;
+  background: #ffffff;
+  border-radius: 14px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  max-height: 86vh;
+  display: flex; flex-direction: column;
+  overflow: hidden;
+  animation: silh-pop 160ms ease-out;
+}
+@keyframes silh-pop { from { transform: translateY(8px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+.silh-header { padding: 18px 22px 12px; border-bottom: 1px solid #e2e8f0; }
+.silh-brand { display: flex; align-items: center; gap: 8px; font-size: 11px; font-weight: 600; color: #475569; letter-spacing: 0.08em; text-transform: uppercase; }
+.silh-logo { width: 10px; height: 10px; border-radius: 50%; background: linear-gradient(135deg, #10b981, #059669); box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2); }
+.silh-header h2 { margin: 8px 0 2px; font-size: 18px; font-weight: 600; }
+.silh-sub { margin: 0; color: #64748b; font-size: 13px; }
+
+.silh-preview-wrap { padding: 14px 22px; border-bottom: 1px solid #e2e8f0; background: #f8fafc; }
+.silh-preview-label { font-size: 10px; color: #64748b; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 6px; font-weight: 600; }
+.silh-preview {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 13px; line-height: 1.55;
+  white-space: pre-wrap; word-break: break-word;
+  max-height: 180px; overflow: auto;
+}
+
+.silh-list { list-style: none; padding: 6px 10px; margin: 0; overflow: auto; flex: 1 1 auto; }
+.silh-item { display: flex; align-items: center; gap: 12px; padding: 8px 12px; border-radius: 10px; }
+.silh-item:hover { background: #f1f5f9; }
+.silh-item-left { display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; }
+.silh-pill { font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 999px; background: #eef2ff; color: #4338ca; white-space: nowrap; }
+.silh-type-EMAIL { background: #e0f2fe; color: #075985; }
+.silh-type-PHONE { background: #fef3c7; color: #92400e; }
+.silh-type-SSN, .silh-type-CREDIT_CARD, .silh-type-IBAN { background: #fee2e2; color: #991b1b; }
+.silh-type-API_KEY, .silh-type-JWT { background: #f3e8ff; color: #6b21a8; }
+.silh-type-IP_ADDRESS, .silh-type-DOB { background: #dcfce7; color: #166534; }
+
+.silh-text { background: #f1f5f9; padding: 3px 8px; border-radius: 6px; font-size: 12px; color: #0f172a; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 340px; font-family: ui-monospace, monospace; }
+.silh-select { appearance: none; -webkit-appearance: none; background: #fff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 6px 28px 6px 10px; font-size: 13px; cursor: pointer; background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'><path d='M0 0l5 6 5-6z' fill='%2364748b'/></svg>"); background-repeat: no-repeat; background-position: right 10px center; }
+.silh-select:focus { outline: 2px solid #2563eb; outline-offset: 1px; }
+
+.silh-mark { border-radius: 3px; padding: 0 2px; font-weight: 500; }
+.silh-action-mask { background: #e5e7eb; color: #374151; }
+.silh-action-tokenize { background: #dbeafe; color: #1e40af; }
+.silh-action-synthesize { background: #fce7f3; color: #9d174d; }
+.silh-action-keep { background: #fee2e2; color: #991b1b; }
+
+.silh-footer { display: flex; justify-content: flex-end; gap: 8px; padding: 14px 22px; border-top: 1px solid #e2e8f0; background: #fff; }
+.silh-btn { font-family: inherit; font-size: 14px; font-weight: 500; padding: 8px 16px; border-radius: 8px; border: 1px solid transparent; cursor: pointer; }
+.silh-btn-ghost { background: transparent; color: #334155; }
+.silh-btn-ghost:hover { background: #f1f5f9; }
+.silh-btn-primary { background: #059669; color: #fff; }
+.silh-btn-primary:hover { background: #047857; }
+.silh-btn-primary:focus { outline: 2px solid #059669; outline-offset: 2px; }
+
+.silh-toast {
+  position: fixed; bottom: 24px; left: 50%;
+  transform: translate(-50%, 20px);
+  z-index: 2147483647;
+  background: #0f172a; color: #fff;
+  padding: 10px 16px; border-radius: 10px;
+  font-size: 13px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  opacity: 0;
+  transition: opacity 0.2s, transform 0.2s;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+}
+.silh-toast-show { opacity: 1; transform: translate(-50%, 0); }
+
+@media (prefers-color-scheme: dark) {
+  .silh-modal { background: #0f172a; color: #e2e8f0; }
+  .silh-header { border-color: #1e293b; }
+  .silh-header h2 { color: #f1f5f9; }
+  .silh-sub, .silh-brand, .silh-preview-label { color: #94a3b8; }
+  .silh-preview-wrap { background: #020617; border-color: #1e293b; }
+  .silh-item:hover { background: #1e293b; }
+  .silh-text { background: #1e293b; color: #e2e8f0; }
+  .silh-select { background-color: #1e293b; color: #e2e8f0; border-color: #334155; }
+  .silh-footer { background: #0f172a; border-color: #1e293b; }
+  .silh-btn-ghost { color: #e2e8f0; }
+  .silh-btn-ghost:hover { background: #1e293b; }
+}
