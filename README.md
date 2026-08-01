@@ -1,39 +1,104 @@
 # SilhouetteAI
 
-**SilhouetteAI** is a privacy-preserving browser extension that intercepts prompts destined for LLM chat interfaces (ChatGPT, Claude, Gemini, Perplexity, Copilot, etc.), detects personally identifiable information (PII) using an on-device model, and redacts, masks, or pseudonymizes it before the prompt leaves the user's machine.
+Browser extension that catches personally identifiable information in your prompt and lets you redact it **before it leaves your machine**.
 
----
+Detection runs entirely on-device. The extension makes no network requests of its own — no telemetry, no remote inference, no prompt contents sent anywhere for analysis.
 
-## 🛡️ Key Features
+## What it does today
 
-- **Prevent Accidental Data Leakage:** Detects and obscures sensitive data (PII) before submission to third-party LLMs.
-- **100% Local Inference:** All PII detection runs entirely on-device. Prompt contents never leave your machine for analysis.
-- **Reversible Tokenization:** The extension substitutes sensitive data with localized tokens (e.g. `[PERSON_1]`). When the LLM responds, tokens are seamlessly translated back into the original text exclusively in the rendered DOM.
-- **Non-Disruptive Pre-flight Review:** Overlays a lightweight pre-send interstitial, allowing you to optionally Mask, Edit, or Keep flagged PII without slowing down your workflow.
-- **Multi-Site Support:** Designed to work across major LLM platforms via a pluggable site adapter system.
+Working end to end on ChatGPT (`chatgpt.com`, `chat.openai.com`):
 
-## ⚙️ How It Works
+- **Intercepts before send.** Captures `Enter` keydowns and Send-button clicks in the capture phase, so the prompt is inspected before submission rather than after.
+- **Detects** email, phone, SSN, credit card (Luhn-validated), API keys, JWT, IBAN, IP address, and date of birth.
+- **Interstitial with live preview** and per-finding actions: Mask, Tokenize, Synthesize, or Keep.
+- **Reversible tokenization.** A tokenized email reaches the provider as `[EMAIL_1_a7f3]`. When the model echoes the token back, the extension rewrites it to the real value *in the rendered DOM only* — the mapping never leaves the machine, and the raw network body still contains only the token.
+- **Three modes:** Interactive (default), Auto-redact, Warn only.
+- **Options page** with category toggles, an allowlist, a test panel, and an audit log that records timestamps, site, finding counts and chosen actions — never prompt contents.
 
-SilhouetteAI employs a robust multi-layered detection pipeline:
-1. **Layer A (Deterministic Regex & Dictionaries):** Captures structured data like emails, phone numbers, credit card numbers, and SSNs.
-2. **Layer B (On-device NER Model):** Transformer-based token classification (running via WASM + SIMD) detects unstructured entities such as people, organizations, locations, and dates.
-3. **Layer C (Fusion & Resolution):** Resolves overlapping predictions, applies confidence thresholds, and handles custom allowlists/denylists.
+## What it does not do yet
 
-## 🛠️ Architecture Overview
+Stated plainly, because the gap determines what this actually protects against:
 
-- **Content Scripts (Site Adapters):** Intercept prompt submissions at both the DOM and network (`fetch`/`XMLHttpRequest`) layers.
-- **Background Service Worker:** Orchestrates the offscreen detection engine to ensure background performance constraints.
-- **Detection Engine:** Harnesses `onnxruntime-web` to execute the local NER model entirely within the browser.
-- **Storage:** Employs secure, local IndexedDB and `chrome.storage.local` to manage per-conversation mappings and settings.
+- **ChatGPT only.** The adapter pattern is in place; Claude, Gemini, Perplexity and Copilot each need their own `adapter-*.js`.
+- **Regex detection only.** Free-form names, street addresses and organization names are **not** caught. The on-device NER layer (ONNX Runtime + WASM in an offscreen document) has a designed integration point in the service worker but is not built.
+- **DOM interception only.** There is no page-world `fetch` shim yet, so if ChatGPT changes its DOM and the adapter misses a send event, the unredacted prompt goes through.
+- **Short prompts can false-positive on phone** (any 10-digit run). Category toggles and the allowlist are the workaround.
+- **No bundled icons.** Chrome shows the default puzzle piece until 16/48/128 PNGs are added to `manifest.json`.
 
-## 🚀 Roadmap
+## Install (unpacked)
 
-- **Phase 0 - Prototyping:** Threat modeling, baseline capability testing, and throwaway proof of concept.
-- **Phase 1 - MVP:** Core ChatGPT adapter, Layer A + Layer B pipelines, standard interactive mode, and token map features.
-- **Phase 2 - Breadth & Polish:** Support for Claude, Gemini, Copilot. Auto-redacting mode, multilingual support, and Firefox compatibility.
-- **Phase 3 - Accuracy & Robustness:** Introduce zero-shot models, improve code-aware detection, multi-turn contexts.
-- **Phase 4 - Enterprise Tier:** Implement policy profiles, audit logs, and SSO features tailored for organizational oversight.
+```bash
+git clone https://github.com/5ham5h33r/SilhouetteAI.git
+```
 
----
+1. Open `chrome://extensions` (or `edge://extensions`) and enable **Developer mode**.
+2. Click **Load unpacked** and select the `extension/` folder.
+3. Go to <https://chatgpt.com> and type a prompt containing PII, for example:
 
-*This project is currently in the active planning and early prototyping phase.*
+   > My email is jane.doe@example.com, my card is 4111 1111 1111 1111, and my phone is +1 (555) 123-4567.
+
+4. Press `Enter`. The interstitial appears — choose actions, then **Send redacted**.
+
+`Esc` cancels, `Ctrl`/`Cmd`+`Enter` sends.
+
+## How a submission flows
+
+```mermaid
+flowchart TD
+    A["User presses Enter in ChatGPT"] --> B["content.js<br/>capture-phase listener"]
+    B --> C["detection.js<br/>regex pack + Luhn + overlap fusion"]
+    C -->|no findings| G["Prompt sent unchanged"]
+    C -->|findings| D{"Mode"}
+    D -->|Interactive| E["Interstitial<br/>Mask / Tokenize / Synthesize / Keep"]
+    D -->|Auto-redact| F["Defaults applied headlessly"]
+    D -->|Warn only| W["Toast shown, prompt sent unchanged"]
+    E --> H["redaction.js<br/>apply right-to-left, build token map"]
+    F --> H
+    H --> I["adapter-chatgpt.js<br/>rewrite composer, trigger Send"]
+    I --> J["Provider receives redacted prompt"]
+    J --> K["MutationObserver<br/>rewrites tokens to originals in DOM only"]
+```
+
+Decisions are applied **right-to-left** so span offsets stay valid as the text length changes. A `_lastSubmitted` flag stops the handler re-firing on the echo when the adapter triggers Send itself.
+
+## Repository layout
+
+```
+extension/
+├── manifest.json
+├── background/
+│   └── service-worker.js         # install handler, RPC stub (Layer B lands here)
+├── content/
+│   ├── detection.js              # regex pack + Luhn + fusion (pure)
+│   ├── redaction.js              # token map, apply + reverse
+│   ├── interstitial.js / .css    # modal UI + toasts
+│   ├── adapter-chatgpt.js        # site-specific DOM glue
+│   └── content.js                # orchestrator
+├── popup/                        # toolbar popup (enable / mode / action)
+└── options/                      # settings, test panel, audit log
+```
+
+## Roadmap
+
+In order: page-world `fetch` / `XMLHttpRequest` / `WebSocket.send` shim so interception survives adapter breakage → adapters for Claude, Gemini, Perplexity and Copilot behind a shared base class → offscreen document running `onnxruntime-web` with a distilled multilingual NER model for PERSON / ORG / ADDRESS → Firefox port → code-block-aware detection.
+
+## Development
+
+Vanilla JS. No build step, no dependencies. Modules are IIFEs registering on `window.__SILH`, and load order in `manifest.json` matters:
+
+```
+detection.js → redaction.js → interstitial.js → adapter-chatgpt.js → content.js
+```
+
+Storage keys: `piigSettings` (preferences), `piigLog` (last 100 audit events), `tokmap:<site>::<conversationId>` (per-conversation token maps), `__silh_salt` (per-install salt for token names).
+
+## Privacy posture
+
+- No outbound network calls from the extension.
+- No telemetry.
+- Logs never contain prompt contents — only timestamps, site id, finding counts, and chosen actions.
+- Permissions requested: `storage`, plus host permissions for `chatgpt.com` and `chat.openai.com` only.
+
+## License
+
+MIT.
