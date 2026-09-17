@@ -39,9 +39,28 @@ Warn-only records the finding and sends the original text.
 Fenced and inline code are skipped by default to reduce false positives. This is
 configurable in Settings.
 
+## Install a release
+
+SilhouetteAI is currently distributed as an unpacked extension while Chrome Web
+Store publishing is prepared.
+
+1. Open the [latest GitHub release](https://github.com/5ham5h33r/SilhouetteAI/releases/latest).
+2. Under **Assets**, download `SilhouetteAI-v1.0.0.zip` and extract it to a permanent
+   folder. The selected folder must contain `manifest.json` at its root.
+3. Open `chrome://extensions` or `edge://extensions`.
+4. Enable **Developer mode**.
+5. Choose **Load unpacked** and select the extracted folder.
+6. Pin SilhouetteAI from the browser's Extensions menu if you want quick access to
+   its mode and settings.
+
+Only install archives published from this repository's Releases page. SilhouetteAI
+updates are not automatic for unpacked extensions. To upgrade, download and extract
+the newer release, replace the previous files, then choose **Reload** on the
+SilhouetteAI card in the extensions page.
+
 ## Install for development
 
-1. Clone the repository.
+1. Clone the repository and check out the branch you want to test.
 2. Open `chrome://extensions` or `edge://extensions`.
 3. Enable Developer mode.
 4. Choose **Load unpacked** and select the `extension/` directory.
