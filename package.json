@@ -1,0 +1,15 @@
+{
+  "name": "silhouette-ai",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Local-first PII protection for AI chat prompts",
+  "scripts": {
+    "test": "node --test test/detection.test.js test/redaction.test.js",
+    "check": "node scripts/validate-extension.js && npm test",
+    "package": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/package-extension.ps1"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "license": "MIT"
+}
