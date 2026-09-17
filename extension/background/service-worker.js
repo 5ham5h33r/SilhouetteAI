@@ -8,6 +8,7 @@ const DEFAULTS = {
   defaultAction: 'tokenize',
   enabledCategories: null,
   allowlist: [],
+  scanCodeBlocks: false,
 };
 
 chrome.runtime.onInstalled.addListener(async ({ reason }) => {

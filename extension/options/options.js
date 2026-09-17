@@ -20,6 +20,7 @@ async function getSettings() {
     defaultAction: piigSettings.defaultAction || 'tokenize',
     enabledCategories: piigSettings.enabledCategories || null,
     allowlist: piigSettings.allowlist || [],
+    scanCodeBlocks: piigSettings.scanCodeBlocks === true,
   };
 }
 
@@ -28,10 +29,10 @@ async function saveSettings(patch) {
   await chrome.storage.local.set({ piigSettings: { ...piigSettings, ...patch } });
 }
 
-function renderCategories(enabledCategories) {
+function renderCategories(settings) {
   const wrap = $('cats');
   wrap.innerHTML = '';
-  const enabled = enabledCategories || CATEGORIES.map((c) => c[0]);
+  const enabled = settings.enabledCategories || CATEGORIES.map((c) => c[0]);
   for (const [id, label] of CATEGORIES) {
     const row = document.createElement('label');
     row.className = 'cat';
@@ -43,9 +44,11 @@ function renderCategories(enabledCategories) {
       const all = Array.from(wrap.querySelectorAll('input'))
         .filter((x) => x.checked)
         .map((x) => x.value);
+      settings.enabledCategories = all.length === CATEGORIES.length ? null : all;
       await saveSettings({
-        enabledCategories: all.length === CATEGORIES.length ? null : all,
+        enabledCategories: settings.enabledCategories,
       });
+      $('test-input').dispatchEvent(new Event('input'));
     });
     const span = document.createElement('span');
     span.textContent = label;
@@ -79,7 +82,7 @@ async function renderLog() {
   }
 }
 
-function renderTest() {
+function renderTest(settings) {
   const input = $('test-input');
   const output = $('test-output');
   function run() {
@@ -88,7 +91,11 @@ function renderTest() {
       output.innerHTML = '<div class="empty">Detection module failed to load.</div>';
       return;
     }
-    const findings = window.__SILH.detection.detect(input.value, {});
+    const findings = window.__SILH.detection.detect(input.value, {
+      enabledCategories: settings.enabledCategories,
+      allowlist: settings.allowlist,
+      ignoreCodeBlocks: !settings.scanCodeBlocks,
+    });
     if (!findings.length) {
       output.innerHTML = '<div class="empty">No detections.</div>';
       return;
@@ -114,17 +121,25 @@ function renderTest() {
 
 async function init() {
   const s = await getSettings();
+  $('version').textContent = 'v' + chrome.runtime.getManifest().version;
   $('enabled').checked = s.enabled;
   $('mode').value = s.mode;
   $('defaultAction').value = s.defaultAction;
   $('allowlist').value = (s.allowlist || []).join('\n');
-  renderCategories(s.enabledCategories);
+  $('scanCodeBlocks').checked = s.scanCodeBlocks;
+  renderCategories(s);
 
   $('enabled').addEventListener('change', (e) => saveSettings({ enabled: e.target.checked }));
   $('mode').addEventListener('change', (e) => saveSettings({ mode: e.target.value }));
   $('defaultAction').addEventListener('change', (e) => saveSettings({ defaultAction: e.target.value }));
+  $('scanCodeBlocks').addEventListener('change', (e) => {
+    s.scanCodeBlocks = e.target.checked;
+    saveSettings({ scanCodeBlocks: e.target.checked });
+    $('test-input').dispatchEvent(new Event('input'));
+  });
   $('allowlist').addEventListener('input', (e) => {
     const list = e.target.value.split('\n').map((s) => s.trim()).filter(Boolean);
+    s.allowlist = list;
     saveSettings({ allowlist: list });
   });
 
@@ -148,7 +163,7 @@ async function init() {
   });
 
   renderLog();
-  renderTest();
+  renderTest(s);
 
   if (location.hash === '#welcome') {
     $('welcome-section').classList.remove('hidden');

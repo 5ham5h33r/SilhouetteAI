@@ -14,6 +14,7 @@
     defaultAction: 'tokenize', // mask | tokenize | synthesize
     enabledCategories: null,   // null = all
     allowlist: [],
+    scanCodeBlocks: false,
     _inProgress: false,
     _lastSubmitted: null,      // text we've just re-submitted; skip one pass
   };
@@ -26,6 +27,7 @@
       defaultAction: piigSettings.defaultAction || 'tokenize',
       enabledCategories: piigSettings.enabledCategories || null,
       allowlist: piigSettings.allowlist || [],
+      scanCodeBlocks: piigSettings.scanCodeBlocks === true,
     });
   }
 
@@ -37,6 +39,7 @@
       state.defaultAction = s.defaultAction || 'tokenize';
       state.enabledCategories = s.enabledCategories || null;
       state.allowlist = s.allowlist || [];
+      state.scanCodeBlocks = s.scanCodeBlocks === true;
     }
   });
 
@@ -57,6 +60,7 @@
     const findings = SILH.detection.detect(text, {
       enabledCategories: state.enabledCategories,
       allowlist: state.allowlist,
+      ignoreCodeBlocks: !state.scanCodeBlocks,
     });
     if (findings.length === 0) return;
 
@@ -73,7 +77,10 @@
         );
         await logEvent({ type: 'warn-only', findings: findings.length, decisions: [] });
         state._lastSubmitted = text;
-        SILH.adapter.triggerSend();
+        if (!SILH.adapter.triggerSend()) {
+          state._lastSubmitted = null;
+          throw new Error('Could not find an enabled send control.');
+        }
         return;
       }
 
@@ -97,7 +104,9 @@
       const redacted = await SILH.redaction.applyDecisions(text, decisions, convKey);
 
       if (redacted !== text) {
-        SILH.adapter.setPromptText(redacted);
+        if (!SILH.adapter.setPromptText(redacted)) {
+          throw new Error('The site editor rejected the protected prompt.');
+        }
         // Give the framework a tick to re-render / enable the send button.
         await new Promise((r) => setTimeout(r, 30));
       }
@@ -108,13 +117,21 @@
         findings: findings.length,
         decisions: decisions.map((d) => d.action),
       });
-      SILH.adapter.triggerSend();
+      if (!SILH.adapter.triggerSend()) {
+        state._lastSubmitted = null;
+        throw new Error('Could not find an enabled send control.');
+      }
 
       if (state.mode === 'auto') {
         SILH.interstitial.toast('SilhouetteAI redacted ' + findings.length + ' item(s).');
       }
     } catch (err) {
       console.error('[SilhouetteAI] Submit handler failed:', err);
+      SILH.interstitial.toast(
+        'SilhouetteAI blocked sending because the site editor changed. Your prompt was not sent.',
+        5000
+      );
+      await logEvent({ type: 'blocked-error', findings: findings.length, decisions: [] });
     } finally {
       state._inProgress = false;
     }
@@ -146,6 +163,13 @@
     handleSubmitAttempt(e);
   }, true);
 
+  // Capture native form submission as a third path for keyboard/accessibility flows.
+  document.addEventListener('submit', (e) => {
+    const composer = SILH.adapter.getComposer();
+    if (!composer || composer.closest('form') !== e.target) return;
+    handleSubmitAttempt(e);
+  }, true);
+
   // ---------- Response reverse-mapping ----------
 
   // Regex matches tokens that include our salt shape.
@@ -153,6 +177,10 @@
 
   async function reverseMapTextNode(node) {
     if (!node || !node.textContent || !TOKEN_RE.test(node.textContent)) return;
+    const parent = node.parentElement;
+    const composer = SILH.adapter.getComposer();
+    if ((composer && (node === composer || composer.contains(node))) ||
+        parent?.closest('textarea, input, [contenteditable="true"]')) return;
     const convKey = SILH.redaction.conversationKey(
       SILH.adapter.id, SILH.adapter.getConversationId()
     );
@@ -180,8 +208,7 @@
   });
 
   function startObserver() {
-    const container = SILH.adapter.responseContainer() || document.body;
-    observer.observe(container, { childList: true, subtree: true, characterData: true });
+    observer.observe(document.body, { childList: true, subtree: true, characterData: true });
   }
 
   // ---------- Popup/options RPC ----------
@@ -192,6 +219,7 @@
       sendResponse({
         enabled: state.enabled, mode: state.mode, defaultAction: state.defaultAction,
         enabledCategories: state.enabledCategories, allowlist: state.allowlist,
+        scanCodeBlocks: state.scanCodeBlocks,
       });
       return true;
     }
@@ -200,6 +228,7 @@
         const findings = SILH.detection.detect(msg.text || '', {
           enabledCategories: state.enabledCategories,
           allowlist: state.allowlist,
+          ignoreCodeBlocks: !state.scanCodeBlocks,
         });
         sendResponse({ findings });
       } catch (e) {
