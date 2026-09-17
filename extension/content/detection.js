@@ -17,6 +17,58 @@
     return sum % 10 === 0;
   }
 
+  function ibanValid(value) {
+    const iban = value.replace(/\s/g, '').toUpperCase();
+    if (iban.length < 15 || iban.length > 34) return false;
+    const rearranged = iban.slice(4) + iban.slice(0, 4);
+    let remainder = 0;
+    for (const char of rearranged) {
+      const expanded = /[A-Z]/.test(char) ? String(char.charCodeAt(0) - 55) : char;
+      for (const digit of expanded) remainder = (remainder * 10 + Number(digit)) % 97;
+    }
+    return remainder === 1;
+  }
+
+  function dateValid(value) {
+    let year;
+    let month;
+    let day;
+    if (/^\d{4}/.test(value)) {
+      [year, month, day] = value.split(/[-/]/).map(Number);
+    } else {
+      [month, day, year] = value.split(/[-/]/).map(Number);
+    }
+    const date = new Date(Date.UTC(year, month - 1, day));
+    return date.getUTCFullYear() === year &&
+      date.getUTCMonth() === month - 1 &&
+      date.getUTCDate() === day;
+  }
+
+  function phoneValid(value, text, index) {
+    const digits = value.replace(/\D/g, '');
+    if (digits.length < 10 || digits.length > 15) return false;
+    if (/[^\d]/.test(value) || value.startsWith('+')) return true;
+    const context = text.slice(Math.max(0, index - 16), index).toLowerCase();
+    return /(?:phone|tel|mobile|call|text)\s*[:#-]?\s*$/.test(context);
+  }
+
+  function ignoredCodeRanges(text) {
+    const ranges = [];
+    const fenced = /```[\s\S]*?```/g;
+    const inline = /`[^`\n]+`/g;
+    for (const regex of [fenced, inline]) {
+      let match;
+      while ((match = regex.exec(text)) !== null) {
+        ranges.push([match.index, match.index + match[0].length]);
+      }
+    }
+    return ranges;
+  }
+
+  function intersectsRanges(start, end, ranges) {
+    return ranges.some(([rangeStart, rangeEnd]) => start < rangeEnd && end > rangeStart);
+  }
+
   // Each pattern: { type, regex (global), confidence, validate? }
   const patterns = [
     {
@@ -49,12 +101,13 @@
       type: 'PHONE',
       regex: /(?:\+?\d{1,3}[\s.-]?)?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}\b/g,
       confidence: 0.9,
-      validate: (m) => (m.match(/\d/g) || []).length >= 10,
+      validate: phoneValid,
     },
     {
       type: 'IBAN',
-      regex: /\b[A-Z]{2}\d{2}[A-Z0-9]{10,30}\b/g,
-      confidence: 0.9,
+      regex: /\b[A-Z]{2}\d{2}(?:[ ]?[A-Z0-9]){11,30}\b/g,
+      confidence: 0.97,
+      validate: ibanValid,
     },
     {
       type: 'IP_ADDRESS',
@@ -65,6 +118,7 @@
       type: 'DOB',
       regex: /\b(?:19|20)\d{2}[-/](?:0[1-9]|1[0-2])[-/](?:0[1-9]|[12]\d|3[01])\b|\b(?:0[1-9]|1[0-2])[/\-](?:0[1-9]|[12]\d|3[01])[/\-](?:19|20)\d{2}\b/g,
       confidence: 0.6,
+      validate: dateValid,
     },
   ];
 
@@ -92,6 +146,7 @@
     options = options || {};
     const allow = new Set((options.allowlist || []).map((s) => String(s).toLowerCase()));
     const enabled = options.enabledCategories; // null | Array<string>
+    const ignored = options.ignoreCodeBlocks ? ignoredCodeRanges(text) : [];
 
     const findings = [];
     for (const p of patterns) {
@@ -100,7 +155,7 @@
       let m;
       while ((m = p.regex.exec(text)) !== null) {
         const matchText = m[0];
-        if (p.validate && !p.validate(matchText)) {
+        if (p.validate && !p.validate(matchText, text, m.index)) {
           if (m.index === p.regex.lastIndex) p.regex.lastIndex++;
           continue;
         }
@@ -108,6 +163,7 @@
           if (m.index === p.regex.lastIndex) p.regex.lastIndex++;
           continue;
         }
+        if (intersectsRanges(m.index, m.index + matchText.length, ignored)) continue;
         findings.push({
           type: p.type,
           start: m.index,
@@ -121,5 +177,13 @@
     return fuseSpans(findings);
   }
 
-  SILH.detection = { detect, fuseSpans, patterns };
+  SILH.detection = {
+    detect,
+    fuseSpans,
+    patterns,
+    luhnValid,
+    ibanValid,
+    dateValid,
+    ignoredCodeRanges,
+  };
 })();

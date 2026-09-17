@@ -10,13 +10,13 @@
   <header>
     <span class="logo" aria-hidden="true"></span>
     <h1>SilhouetteAI</h1>
-    <span class="version">v0.1.0</span>
+    <span class="version" id="version"></span>
   </header>
 
   <section id="welcome-section" class="welcome hidden">
     <h2>Welcome to SilhouetteAI</h2>
     <p>SilhouetteAI detects personal information in your AI chat prompts and redacts it before submission. All detection runs locally &mdash; nothing is sent anywhere.</p>
-    <p>By default, the extension is active on ChatGPT. Try it: type a prompt that contains an email or phone number, then press Enter.</p>
+    <p>By default, the extension is active on ChatGPT, Claude, Gemini, Perplexity, and Microsoft Copilot. Try it: type a prompt that contains an email or phone number, then press Enter.</p>
     <button id="dismiss-welcome" class="primary">Got it</button>
   </section>
 
@@ -33,6 +33,10 @@
         <option value="auto">Auto &mdash; redact silently</option>
         <option value="warn">Warn only &mdash; send as-is</option>
       </select>
+    </div>
+    <div class="field">
+      <label class="field-label" for="scanCodeBlocks">Scan fenced and inline code</label>
+      <label class="switch"><input type="checkbox" id="scanCodeBlocks"><span class="slider"></span></label>
     </div>
     <div class="field">
       <label class="field-label" for="defaultAction">Default redaction</label>
@@ -78,7 +82,7 @@
   </section>
 
   <footer class="page-footer">
-    SilhouetteAI &middot; All detection runs locally &middot; v0.1.0 Phase 1 MVP
+    SilhouetteAI &middot; All detection runs locally &middot; No telemetry
   </footer>
 </div>
 
